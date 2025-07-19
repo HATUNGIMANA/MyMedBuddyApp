@@ -157,8 +157,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _addAppointmentDialog,
         backgroundColor: Colors.green[800],
-        child: const Icon(Icons.add),
         tooltip: 'Add Appointment',
+        child: const Icon(Icons.add),
       ),
     );
   }

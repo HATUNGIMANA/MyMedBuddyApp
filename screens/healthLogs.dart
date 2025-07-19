@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class HealthLogsScreen extends StatefulWidget {
   const HealthLogsScreen({super.key});
@@ -42,7 +45,8 @@ class _HealthLogsScreenState extends State<HealthLogsScreen> {
 
     if (storedData != null) {
       final decoded = json.decode(storedData) as List<dynamic>;
-      final savedLogs = decoded.map((e) => Map<String, String>.from(e)).toList();
+      final savedLogs =
+          decoded.map((e) => Map<String, String>.from(e)).toList();
       setState(() {
         _logs = [..._defaultLogs, ...savedLogs];
       });
@@ -73,7 +77,8 @@ class _HealthLogsScreenState extends State<HealthLogsScreen> {
           children: [
             TextField(
               controller: dateController,
-              decoration: const InputDecoration(labelText: 'Date (YYYY-MM-DD)'),
+              decoration:
+                  const InputDecoration(labelText: 'Date (YYYY-MM-DD)'),
             ),
             TextField(
               controller: summaryController,
@@ -101,10 +106,8 @@ class _HealthLogsScreenState extends State<HealthLogsScreen> {
                 _logs.add(newLog);
               });
 
-              // Save only logs added by user (excluding defaults)
               final savedLogs = _logs.skip(_defaultLogs.length).toList();
               _saveLogs(savedLogs);
-
               Navigator.pop(context);
             },
             child: const Text('Add'),
@@ -112,6 +115,38 @@ class _HealthLogsScreenState extends State<HealthLogsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _exportLogsAsPDF() async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        build: (pw.Context context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Text('Health Logs Report',
+                style: pw.TextStyle(fontSize: 24)),
+          ),
+          pw.Table.fromTextArray(
+            context: context,
+            cellAlignment: pw.Alignment.centerLeft,
+            data: <List<String>>[
+              ['Date', 'Summary', 'Note'],
+              ..._logs.map((log) => [
+                    log['date'] ?? '',
+                    log['summary'] ?? '',
+                    log['note'] ?? ''
+                  ])
+            ],
+          ),
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async {
+      return pdf.save();
+    });
   }
 
   Widget _buildLogCard(Map<String, String> log) {
@@ -144,6 +179,13 @@ class _HealthLogsScreenState extends State<HealthLogsScreen> {
       appBar: AppBar(
         title: const Text('Health Logs'),
         backgroundColor: Colors.green[800],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Export as PDF',
+            onPressed: _exportLogsAsPDF,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -154,8 +196,8 @@ class _HealthLogsScreenState extends State<HealthLogsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewLog,
         backgroundColor: Colors.green[800],
-        child: const Icon(Icons.add),
         tooltip: 'Add Log',
+        child: const Icon(Icons.add),
       ),
     );
   }

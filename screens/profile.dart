@@ -17,10 +17,16 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _fullName = 'User';
   String _username = 'username';
+  String _age = '';
+  String _condition = '';
+  String _reminders = '';
   File? _profileImageFile;
   String _statusMessage = '';
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _conditionController = TextEditingController();
+  final TextEditingController _remindersController = TextEditingController();
 
   @override
   void initState() {
@@ -35,7 +41,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _fullName = prefs.getString('user_fullname') ?? 'User';
       _username = prefs.getString('user_username') ?? 'username';
+      _age = prefs.getString('user_age') ?? '';
+      _condition = prefs.getString('user_condition') ?? '';
+      _reminders = prefs.getString('user_reminders') ?? '';
+
       _nameController.text = _fullName;
+      _ageController.text = _age;
+      _conditionController.text = _condition;
+      _remindersController.text = _reminders;
 
       if (savedImagePath != null && File(savedImagePath).existsSync()) {
         _profileImageFile = File(savedImagePath);
@@ -60,17 +73,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  Future<void> _updateFullName() async {
-    final newName = _nameController.text.trim();
-    if (newName.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_fullname', newName);
+  Future<void> _updateProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_fullname', _nameController.text.trim());
+    await prefs.setString('user_age', _ageController.text.trim());
+    await prefs.setString('user_condition', _conditionController.text.trim());
+    await prefs.setString('user_reminders', _remindersController.text.trim());
 
-      setState(() {
-        _fullName = newName;
-        _statusMessage = 'Name updated successfully!';
-      });
-    }
+    setState(() {
+      _fullName = _nameController.text.trim();
+      _age = _ageController.text.trim();
+      _condition = _conditionController.text.trim();
+      _reminders = _remindersController.text.trim();
+      _statusMessage = 'Profile updated successfully!';
+    });
   }
 
   Future<void> _logout() async {
@@ -98,51 +114,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: _pickAndSaveImage,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.green[100],
-                backgroundImage: _profileImageFile != null
-                    ? FileImage(_profileImageFile!)
-                    : const AssetImage('assets/default_profile.png')
-                        as ImageProvider,
-                child: _profileImageFile == null
-                    ? const Icon(Icons.camera_alt, size: 32, color: Colors.green)
-                    : null,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: _pickAndSaveImage,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.green[100],
+                  backgroundImage: _profileImageFile != null
+                      ? FileImage(_profileImageFile!)
+                      : const AssetImage('assets/default_profile.png')
+                          as ImageProvider,
+                  child: _profileImageFile == null
+                      ? const Icon(Icons.camera_alt, size: 32, color: Colors.green)
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _updateFullName,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[700],
+              const SizedBox(height: 12),
+              TextField(
+                controller: _ageController,
+                decoration: const InputDecoration(
+                  labelText: 'Age',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
               ),
-              child: const Text('Update Name'),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '@$_username',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            if (_statusMessage.isNotEmpty) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _conditionController,
+                decoration: const InputDecoration(
+                  labelText: 'Health Condition',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _remindersController,
+                decoration: const InputDecoration(
+                  labelText: 'Medication Reminders',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _updateProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                ),
+                child: const Text('Update Profile'),
+              ),
+              const SizedBox(height: 12),
               Text(
-                _statusMessage,
-                style: const TextStyle(color: Colors.green),
+                '@$_username',
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
+              if (_statusMessage.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  _statusMessage,
+                  style: const TextStyle(color: Colors.green),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
